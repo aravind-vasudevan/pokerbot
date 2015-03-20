@@ -40,15 +40,24 @@ public class BotStarter implements Bot {
 		// Get the ordinal values of the cards in your hand
 		int height1 = hand.getCard(0).getHeight().ordinal();
 		int height2 = hand.getCard(1).getHeight().ordinal();
-		
-		// Return the appropriate move according to our amazing strategy
-		if( height1 > 9 || height2 > 9 ) {
+
+		if( state.getbeginningOfRound() == true ){
+			state.setbeginningOfRound( false );
 			return new PokerMove(state.getMyName(), "raise", 2*state.getBigBlind());
-		} else if( height1 > 5 && height2 > 5 ) {
+		} else if( state.getAmountToCall() > 0 ) {
 			return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
 		} else {
 			return new PokerMove(state.getMyName(), "check", 0);
 		}
+	
+		// Return the appropriate move according to our amazing strategy
+		// if( height1 > 9 || height2 > 9 ) {
+		// 	return new PokerMove(state.getMyName(), "raise", 2*state.getBigBlind());
+		// } else if( height1 > 5 && height2 > 5 ) {
+		// 	return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
+		// } else {
+		// 	return new PokerMove(state.getMyName(), "check", 0);
+		// }
 	}
 	
 	/**

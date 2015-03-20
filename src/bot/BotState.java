@@ -26,6 +26,8 @@ public class BotState {
 	private int round, smallBlind, bigBlind;
 	
 	private boolean onButton;
+
+	private boolean beginningOfRound;
 	
 	private int myStack, opponentStack;
 	
@@ -43,7 +45,7 @@ public class BotState {
 	
 	private Map<String,String> settings = new HashMap<String,String>();
 	
-	private String myName = "";
+	private String myName = "RaiseCallBot";
 	
 	private int[] sidepots;
 	
@@ -160,6 +162,7 @@ public class BotState {
 	 * just to make sure we don't use old values
 	 */
 	private void resetRoundVariables() {
+		beginningOfRound = true;
 		smallBlind = 0;
 		bigBlind = 0;
 		pot = 0;
@@ -183,6 +186,14 @@ public class BotState {
 
 	public boolean onButton() {
 		return onButton;
+	}
+
+	public boolean getbeginningOfRound() {
+		return beginningOfRound;
+	}
+
+	public void setbeginningOfRound(boolean b) {
+		beginningOfRound = b;
 	}
 
 	public int getmyStack() {
