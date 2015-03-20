@@ -33,6 +33,11 @@ public class BotStarter implements Bot {
 	 */
 	@Override
 	public PokerMove getMove(BotState state, Long timeOut) {
+
+		// Fold if the time left in our time bank is too low (i.e. less than half a second)
+		if( timeOut < 500 )
+			return new PokerMove(state.getMyName(), "fold", 0);
+
 		HandHoldem hand = state.getHand();
 		String handCategory = getHandCategory(hand, state.getTable()).toString();
 		System.err.printf("my hand is %s, opponent action is %s, pot: %d\n", handCategory, state.getOpponentAction(), state.getPot());
@@ -41,13 +46,60 @@ public class BotStarter implements Bot {
 		int height1 = hand.getCard(0).getHeight().ordinal();
 		int height2 = hand.getCard(1).getHeight().ordinal();
 
-		if( state.getbeginningOfRound() == true ){
-			state.setbeginningOfRound( false );
-			return new PokerMove(state.getMyName(), "raise", 2*state.getBigBlind());
-		} else if( state.getAmountToCall() > 0 ) {
-			return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
-		} else {
-			return new PokerMove(state.getMyName(), "check", 0);
+		switch( state.onButton() ) {
+			// We are on the button. i.e. small blind
+			case true: {
+				switch( state.getStreetNumber() ) {
+
+					// Pre-flop
+					case 0: {
+						break;
+					}
+
+					// Flop to Turn
+					case 3: {
+						break;
+					}
+
+					// Turn to River
+					case 4: {
+						break;
+					}
+
+					// Post River. Final round of betting.
+					case 5: {
+						break;
+					}
+				}
+				break;
+			}
+
+			// Opponent is on the button. i.e. big blind
+			case false: {
+				switch( state.getStreetNumber() ) {
+
+					// Pre-flop
+					case 0: {
+						break;
+					}
+
+					// Flop to Turn
+					case 3: {
+						break;
+					}
+
+					// Turn to River
+					case 4: {
+						break;
+					}
+
+					// Post River. Final round of betting.
+					case 5: {
+						break;
+					}
+				}
+				break;
+			}
 		}
 	
 		// Return the appropriate move according to our amazing strategy

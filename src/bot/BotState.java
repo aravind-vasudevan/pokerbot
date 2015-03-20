@@ -26,8 +26,6 @@ public class BotState {
 	private int round, smallBlind, bigBlind;
 	
 	private boolean onButton;
-
-	private boolean beginningOfRound;
 	
 	private int myStack, opponentStack;
 	
@@ -52,6 +50,9 @@ public class BotState {
 	private int timeBank, timePerMove;
 	
 	private int handsPerLevel;
+
+	// My variables
+	private boolean beginningOfRound;
 	
 	/**
 	 * Parses the settings for this game
@@ -188,10 +189,6 @@ public class BotState {
 		return onButton;
 	}
 
-	public boolean getbeginningOfRound() {
-		return beginningOfRound;
-	}
-
 	public void setbeginningOfRound(boolean b) {
 		beginningOfRound = b;
 	}
@@ -238,6 +235,16 @@ public class BotState {
 	
 	public int getAmountToCall() {
 		return amountToCall;
+	}
+
+	// My methods
+
+	public boolean getbeginningOfRound() {
+		return beginningOfRound;
+	}
+
+	public int getStreetNumber() {
+		return table.length;
 	}
 
 }
