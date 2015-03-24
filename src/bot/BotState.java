@@ -12,11 +12,18 @@
 package bot;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.*;
+
+import java.lang.Object;
 
 import poker.Card;
 import poker.HandHoldem;
 import poker.PokerMove;
+
+import com.stevebrecher.HandEval;
 
 /**
  * Class that parses strings given by the engine and stores values for later use.
@@ -43,7 +50,7 @@ public class BotState {
 	
 	private Map<String,String> settings = new HashMap<String,String>();
 	
-	private String myName = "RaiseCallBot";
+	private String myName = "Jeeves";
 	
 	private int[] sidepots;
 	
@@ -53,6 +60,10 @@ public class BotState {
 
 	// My variables
 	private boolean beginningOfRound;
+
+	private Map<String, ArrayList<Card>> outs = new HashMap<String, ArrayList<Card>>();
+
+	public static Set<String> handCategoryValues = new HashSet<String>();
 	
 	/**
 	 * Parses the settings for this game
@@ -60,6 +71,12 @@ public class BotState {
 	 * @param value : value to be set for the key
 	 */
 	protected void updateSetting(String key, String value) {
+
+		// Calculate the hand category values once (enum to set of strings)
+		if( handCategoryValues.size() == 0 )
+			 for (HandEval.HandCategory me : HandEval.HandCategory.values())
+		        handCategoryValues.add( me.toString() );
+
 		settings.put(key, value);
 		if( key.equals("your_bot") ) {
 			myName = value;
@@ -171,6 +188,7 @@ public class BotState {
 		amountToCall = 0;
 		hand = null;
 		table = new Card[0];
+		outs.clear();
 	}
 
 	public int getRound() {
@@ -237,6 +255,40 @@ public class BotState {
 		return amountToCall;
 	}
 
+	// Copying getHandCategory method from BotStarter 
+	/**
+	 * Calculates the bot's hand strength, with 0, 3, 4 or 5 cards on the table.
+	 * This uses the com.stevebrecher package to get hand strength.
+	 * @param hand : cards in hand
+	 * @param table : cards on table
+	 * @return HandCategory with what the bot has got, given the table and hand
+	 */
+	public HandEval.HandCategory getHandCategory(HandHoldem hand, Card[] table) {
+		if( table == null || table.length == 0 ) { // there are no cards on the table
+			return hand.getCard(0).getHeight() == hand.getCard(1).getHeight() // return a pair if our hand cards are the same
+					? HandEval.HandCategory.PAIR
+					: HandEval.HandCategory.NO_PAIR;
+		}
+		long handCode = hand.getCard(0).getNumber() + hand.getCard(1).getNumber();
+
+		for( Card card : table ) { handCode += card.getNumber(); }
+		
+		if( table.length == 3 ) { // three cards on the table
+			return rankToCategory(HandEval.hand5Eval(handCode));
+		}
+		if( table.length == 4 ) { // four cards on the table
+			return rankToCategory(HandEval.hand6Eval(handCode));
+		}
+		return rankToCategory(HandEval.hand7Eval(handCode)); // five cards on the table
+	}
+	
+	/**
+	 * small method to convert the int 'rank' to a readable enum called HandCategory
+	 */
+	public HandEval.HandCategory rankToCategory(int rank) {
+		return HandEval.HandCategory.values()[rank >> HandEval.VALUE_SHIFT];
+	}
+
 	// My methods
 
 	public boolean getbeginningOfRound() {
@@ -245,6 +297,76 @@ public class BotState {
 
 	public int getStreetNumber() {
 		return table.length;
+	}
+
+	/**
+	 * This function calculates the number of outs after the flop is out
+	 */
+
+	public void calculateOuts() {
+
+		// Right now, we recalculate outs every time we get a new card. This can be
+		// changed with a bit of memoization. Must look into this.
+		outs.clear();
+		ArrayList <Card> cardsToBeChecked = new ArrayList <Card>();
+
+		// Bounds checking. Can't calculate outs when table is pre-flop
+		// or post river
+		if( table.length ==0 || table.length == 5 )
+			return;
+
+		// This search space of 52 cards can be reduced further
+		// if we know what patterns to look for
+		// i.e. look only for three of a kind and full houses 
+		// because a straight or flush is not possible
+		for( int i=0; i<52; ++i )
+			cardsToBeChecked.add( new Card(i) );
+		for( int i=0; i<table.length; ++i )
+			cardsToBeChecked.remove( table[i] ); // Remove cards that are on the table
+		for( int i=0; i<hand.getNumberOfCards(); ++i )
+			cardsToBeChecked.remove( hand.getCard(i) ); // Remove hole cards
+ 
+		for( int i=0; i<cardsToBeChecked.size(); ++i ) {
+			ArrayList<Card> newTable = new ArrayList<Card>( Arrays.asList(table) );
+			newTable.add( cardsToBeChecked.get(i) );
+			String handCategory = getHandCategory(hand, newTable.toArray( new Card[newTable.size()] )).toString();
+			if( handCategoryValues.contains(handCategory) == true ) {
+				if( outs.get(handCategory) == null )
+					outs.put( handCategory, new ArrayList<Card>() );
+				outs.get( handCategory ).add( cardsToBeChecked.get(i) );
+			}
+		}
+	}
+
+	public int getNumberOfOuts() {
+		// We can't calculate number of outs pre-flop or post river
+		if( table.length == 0 || table.length == 5 )
+			return -1;
+
+		if( outs.isEmpty() == true )
+			calculateOuts();
+
+		int counter=0;
+		for( Map.Entry<String, ArrayList<Card>> entry : outs.entrySet() )
+			if( !entry.getKey().equals("NO_PAIR") && 
+				!entry.getKey().equals("PAIR") )
+				counter += entry.getValue().size();
+		return counter;
+	}
+
+	/**
+	 * Small function that calculates pot-odds
+	 */
+	public double getPotOdds() {
+		return (double) pot/amountToCall;
+	}
+
+	/**
+	 * Small function that returns the number of cards that 
+	 * remain the deck
+	 */
+	public int getNumberOfRemainingCards() {
+		return (52-table.length-hand.getNumberOfCards());
 	}
 
 }

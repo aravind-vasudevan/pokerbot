@@ -139,4 +139,18 @@ public class Card
 		
 		return str;
 	}
+
+	/**
+	 * My overridden implementation of the equals method to 
+	 * support ArrayList.contains()
+	 * @return boolean : Returns if two objects are equal in terms of card number
+	 */
+	@Override
+    public boolean equals(Object object) {
+        boolean sameSame = false;
+        if (object != null && object instanceof Card)
+            sameSame = this.number == ((Card) object).number;
+
+        return sameSame;
+    }
 }

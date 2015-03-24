@@ -39,68 +39,102 @@ public class BotStarter implements Bot {
 			return new PokerMove(state.getMyName(), "fold", 0);
 
 		HandHoldem hand = state.getHand();
-		String handCategory = getHandCategory(hand, state.getTable()).toString();
+		HandEval.HandCategory handCategory = getHandCategory(hand, state.getTable());
+		String handCategoryString = handCategory.toString();
 		System.err.printf("my hand is %s, opponent action is %s, pot: %d\n", handCategory, state.getOpponentAction(), state.getPot());
 		
 		// Get the ordinal values of the cards in your hand
 		int height1 = hand.getCard(0).getHeight().ordinal();
 		int height2 = hand.getCard(1).getHeight().ordinal();
 
-		switch( state.onButton() ) {
-			// We are on the button. i.e. small blind
-			case true: {
-				switch( state.getStreetNumber() ) {
+		switch( state.getStreetNumber() ) {
 
-					// Pre-flop
-					case 0: {
-						break;
-					}
+			// Pre-flop
+			case 0: {
+				if( height1+height2 > 14 || state.onButton() )
+					return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
+				else
+					return new PokerMove(state.getMyName(), "fold", 0);
+				// break;
+			}
 
-					// Flop to Turn
-					case 3: {
-						break;
-					}
-
-					// Turn to River
-					case 4: {
-						break;
-					}
-
-					// Post River. Final round of betting.
-					case 5: {
-						break;
-					}
-				}
+			// Flop to Turn
+			case 3: {
+				if( handCategory.ordinal() > HandEval.HandCategory.PAIR.ordinal() || state.getNumberOfOuts() >=8 )
+					return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
 				break;
 			}
 
-			// Opponent is on the button. i.e. big blind
-			case false: {
-				switch( state.getStreetNumber() ) {
-
-					// Pre-flop
-					case 0: {
-						break;
-					}
-
-					// Flop to Turn
-					case 3: {
-						break;
-					}
-
-					// Turn to River
-					case 4: {
-						break;
-					}
-
-					// Post River. Final round of betting.
-					case 5: {
-						break;
-					}
-				}
+			// Turn to River
+			case 4: {
+				if( handCategory.ordinal() > HandEval.HandCategory.PAIR.ordinal() || state.getNumberOfOuts() >=10 )
+					return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
 				break;
 			}
-		}
+
+			// Post River. Final round of betting.
+			case 5: {
+				if( handCategory.ordinal() == HandEval.HandCategory.PAIR.ordinal() )
+					return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
+				break;
+			}
+		}	
+
+		// switch( state.onButton() ) {
+		// 	// We are on the button. i.e. small blind
+		// 	case true: {
+		// 		switch( state.getStreetNumber() ) {
+
+		// 			// Pre-flop
+		// 			case 0: {
+		// 				break;
+		// 			}
+
+		// 			// Flop to Turn
+		// 			case 3: {
+		// 				break;
+		// 			}
+
+		// 			// Turn to River
+		// 			case 4: {
+		// 				break;
+		// 			}
+
+		// 			// Post River. Final round of betting.
+		// 			case 5: {
+		// 				break;
+		// 			}
+		// 		}
+		// 		break;
+		// 	}
+
+		// 	// Opponent is on the button. i.e. big blind
+		// 	case false: {
+		// 		switch( state.getStreetNumber() ) {
+
+		// 			// Pre-flop
+		// 			case 0: {
+		// 				break;
+		// 			}
+
+		// 			// Flop to Turn
+		// 			case 3: {
+		// 				break;
+		// 			}
+
+		// 			// Turn to River
+		// 			case 4: {
+		// 				break;
+		// 			}
+
+		// 			// Post River. Final round of betting.
+		// 			case 5: {
+		// 				break;
+		// 			}
+		// 		}
+		// 		break;
+		// 	}
+		// }
 	
 		// Return the appropriate move according to our amazing strategy
 		// if( height1 > 9 || height2 > 9 ) {
@@ -110,6 +144,7 @@ public class BotStarter implements Bot {
 		// } else {
 		// 	return new PokerMove(state.getMyName(), "check", 0);
 		// }
+		return new PokerMove(state.getMyName(), "check", 0);
 	}
 	
 	/**
@@ -126,7 +161,7 @@ public class BotStarter implements Bot {
 					: HandEval.HandCategory.NO_PAIR;
 		}
 		long handCode = hand.getCard(0).getNumber() + hand.getCard(1).getNumber();
-		
+
 		for( Card card : table ) { handCode += card.getNumber(); }
 		
 		if( table.length == 3 ) { // three cards on the table
